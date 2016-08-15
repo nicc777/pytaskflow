@@ -76,7 +76,7 @@ class EntryPoint:
             .
 
     """
-    def __init__(self, request_path="/", request_method="GET", query_string=None, post_data=None, cookies=None, default_template="home", log_handler=LoggingHandler(), framework_request_obj=None, framework_response_obj=None):
+    def __init__(self, request_path="/", request_method="GET", query_string=None, post_data=None, cookies=None, default_template="home", log_handler=LoggingHandler(), framework_request_obj=None, framework_response_obj=None, additional_framework_objects=None):
         """
         Given the following request:
 
@@ -93,6 +93,7 @@ class EntryPoint:
         :param log_handler: LoggingHandler implementation
         :param framework_request_obj: object containing your framework request object, for example: in Flask, the flask.Request class
         :param framework_response_obj: object containing your framework response object, for example: in Flask, the flask.Response class
+        :param additional_framework_objects: dict containing any other initialised opjects that may need to be used by the application
         """
         self.request_path = request_path
         self.request_method = request_method
@@ -106,6 +107,11 @@ class EntryPoint:
         self.log_handler = log_handler
         self.framework_request_obj = framework_request_obj
         self.framework_response_obj = framework_response_obj
+        self.additional_framework_objects = {}
+        if isinstance(additional_framework_objects, dict):
+            self.additional_framework_objects = additional_framework_objects
+        else:
+            warnings.warn("additional_framework_objects must be a dict containing the object name as key and the initialised object as value.")
 
 
 class Result:
@@ -270,7 +276,7 @@ class TaskCollection:
         :param err_task_name: str with the Task.task_name to call when an error occured (Result.is_error == True)
         """
         if isinstance(task.task_impl, Function):
-            self.tasks[task.task_name] = (task.task_impl, success_task_name, err_task_name)
+            self.tasks[task.task_name] = (task, success_task_name, err_task_name)
             self.task_names.append(task.task_name)
 
     def get_task(self, task_name):
@@ -326,7 +332,7 @@ class WorkFlow:
         self.result = Result({'Redirect': True, 'RedirectUrl': 'home', 'DebugMessage': "WorkFlow failed (default redirect home)"}, is_error=False, err_msg=None)
         task_name = start_task_name
         task = task_collection.get_task(task_name)
-        result = task.result(entry_point=entry_point, previous_result=None)
+        result = task.run_task(entry_point=entry_point, previous_result=None)
         if isinstance(result, Result):
             if 'Proceed' in result.result_obj:
                 run = result.result_obj['Proceed']
@@ -342,12 +348,15 @@ class WorkFlow:
                     run = False
                     task = task_collection.get_task(next_task)
                     task_name = next_task
-                    result = task.result(entry_point=entry_point, previous_result=result)
+                    result = task.run_task(entry_point=entry_point, previous_result=result)
                     if isinstance(result, Result):
                         if 'Proceed' in result.result_obj:
                             run = result.result_obj['Proceed']
                     else:
-                        result = Result({'Redirect': True, 'RedirectUrl': 'home', 'DebugMessage': self.debugMessage, 'Proceed': False}, is_error=True, err_msg="WorkFlow FAILED!")
+                        result = Result({'Redirect': True, 'RedirectUrl': 'home', 'Proceed': False}, is_error=True, err_msg="WorkFlow FAILED!")
+        else:
+            result = Result()
+            warnings.warn("Result was not set properly in the initial task and we therefore fallback on the default Result()")
         self.result = result    # Store final result...
 
 
