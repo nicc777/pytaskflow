@@ -237,6 +237,7 @@ class Task:
                 self.result = self.task_impl.result(entry_point=entry_point, previous_result=result)
         except:
             self.result = Result(None, is_error=True, err_msg="EXCEPTION: %s" % traceback.format_exc())
+            warnings.warn("EXCEPTION: %s" % traceback.format_exc())
         return self.result
 
 
@@ -275,7 +276,7 @@ class TaskCollection:
         :param success_task_name: str with the Task.task_name to call when no errors occur (Result.is_error == False)
         :param err_task_name: str with the Task.task_name to call when an error occured (Result.is_error == True)
         """
-        if isinstance(task.task_impl, Function):
+        if self._validate(task=task):
             self.tasks[task.task_name] = (task, success_task_name, err_task_name)
             self.task_names.append(task.task_name)
 
@@ -308,13 +309,16 @@ class TaskCollection:
                         return value_tuple[1]
         return "StopperTask"
 
-    def validate(self):
+    def _validate(self, task):
         """
         Validate that all Task objects are defined (for every named task a task implementation is registered).
         :return: bool True if validation is successful otherwise return False
         """
         # TODO implement...
-        pass
+        final_result = True
+        if not isinstance(task.task_impl, Function):
+            final_result = False
+        return final_result
 
 
 class WorkFlow:

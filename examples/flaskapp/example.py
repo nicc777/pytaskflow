@@ -16,6 +16,4 @@ def home():
         workflow = application_workflows.flask_sample_app_workflow(entry_point)
     else:
         warnings.warn("entry_point expected to be EntryPoint but is %s" % type(entry_point))
-    if isinstance(workflow, tuple):
-        return render_template(workflow[0], visits=workflow[1])
-    return render_template('base.html', visits=0)
+    return workflow
