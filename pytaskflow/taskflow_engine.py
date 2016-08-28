@@ -76,7 +76,7 @@ class EntryPoint:
             .
 
     """
-    def __init__(self, request_path="/", request_method="GET", query_string=None, post_data=None, cookies=None, default_template="home", log_handler=LoggingHandler(), framework_request_obj=None, framework_response_obj=None, additional_framework_objects=None):
+    def __init__(self, request_path="/", request_method="GET", query_string=None, post_data=None, cookies=None, default_template="home", log_handler=LoggingHandler(), framework_request_obj=None, framework_response_obj=None, additional_framework_objects=None, other_instructions={'WebFramework': 'flask', }):
         """
         Given the following request:
 
@@ -94,6 +94,7 @@ class EntryPoint:
         :param framework_request_obj: object containing your framework request object, for example: in Flask, the flask.Request class
         :param framework_response_obj: object containing your framework response object, for example: in Flask, the flask.Response class
         :param additional_framework_objects: dict containing any other initialised opjects that may need to be used by the application
+        :param other_instructions: dict containing other instruction you can use in your applications.
         """
         self.request_path = request_path
         self.request_method = request_method
@@ -112,6 +113,11 @@ class EntryPoint:
             self.additional_framework_objects = additional_framework_objects
         else:
             warnings.warn("additional_framework_objects must be a dict containing the object name as key and the initialised object as value.")
+        if isinstance(other_instructions, dict):
+            self.other_instructions = other_instructions
+        else:
+            self.other_instructions = {'WebFramework': 'flask', }
+            warnings.warn("other_instructions was not a dictionary when defining the EntryPoint and therefore the default values will be used.")
 
 
 class Result:

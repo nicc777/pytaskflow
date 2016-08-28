@@ -6,7 +6,7 @@ import inspect
 from pytaskflow.taskflow_engine import EntryPoint, LoggingHandler
 
 
-def flask_entry_point_creator(request_obj, response_obj, other_objs={}):
+def flask_entry_point_creator(request_obj, response_obj, other_objs={}, other_instructions={'WebFramework': 'flask', }):
     try:
         _flask = __import__('flask', globals(), locals(), ['request'], 0)
         if not (inspect.ismodule(_flask) and _flask.__name__ == 'flask'):
@@ -22,7 +22,8 @@ def flask_entry_point_creator(request_obj, response_obj, other_objs={}):
                 log_handler=LoggingHandler(),
                 framework_request_obj=request_obj,
                 framework_response_obj=response_obj,
-                additional_framework_objects=other_objs
+                additional_framework_objects=other_objs,
+                other_instructions=other_instructions,
             )
             return entry_point
     except:
