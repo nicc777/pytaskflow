@@ -30,3 +30,5 @@ class FinalResponseFunction(Function):
         else:
             warnings.warn("result was expected to be Result() but is %s" % type(result))
         return return_result
+
+# EOF
