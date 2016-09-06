@@ -92,3 +92,5 @@ ENV/
 
 # Ignore PyCharm specific files
 .idea/
+
+gh-md-toc
