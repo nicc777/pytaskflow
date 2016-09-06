@@ -268,3 +268,7 @@ Finally, the TaskCollection is combined with an EntryPoint to create a Workflow.
             result = app_workflow.result
 
 The final `result` is actually a Result object. From here the function now calls the appropriate web framework object (Flask's `render_template`) before returning.
+
+# Credits
+
+* [github-markdown-toc](https://github.com/ekalinin/github-markdown-toc) by Eugene Kalinin used to create the markdown TOC
