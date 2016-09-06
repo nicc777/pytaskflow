@@ -14,7 +14,7 @@ The following diagram explains the basic flow through the Workflow engine, assum
 
 ![Diagram 1](https://github.com/nicc777/pytaskflow/blob/master/docs/diagram_01.png)
 
-Step by step:
+Step by step walkthrough is shown below and highlights examples from the `example` directory.
 
 ### Step 1 - Framework Entry point
  
@@ -168,6 +168,6 @@ Therefore, the example code showing `return workflow` is actually another way of
 
 And that is it in a nutshell.
 
-## Building a Task
+## Creating a WorkFlow
 
 TODO....
