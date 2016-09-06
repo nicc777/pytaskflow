@@ -7,3 +7,9 @@ For this reason I have come up with a simple (IMHO) Python library that allow me
 I hope this might be of some benefot to someone else as well.
 
 Updates to this document and others to follow...
+
+## Basic Operation and Logic
+
+The following diagram explains the basic flow through the Workflow engine, assuming your tasks have all been defined (more about this later):
+
+![Diagram 1](https://github.com/nicc777/pytaskflow/blob/master/docs/diagram_01.png)
