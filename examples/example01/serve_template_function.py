@@ -14,7 +14,7 @@ class ServeTemplateFunction(Function):
     def result(self, entry_point=EntryPoint(), previous_result=None):
         result_obj = {}
         template_name = DEFAULT_TEMPLATE
-        proceed = True
+        proceed = False
         if isinstance(previous_result, Result):
             if isinstance(previous_result.result_obj, dict):
                 result_obj = previous_result.result_obj

@@ -366,7 +366,7 @@ class WorkFlow:
                     else:
                         result = Result({'Redirect': True, 'RedirectUrl': 'home', 'Proceed': False}, is_error=True, err_msg="WorkFlow FAILED!")
         else:
-            result = Result()
+            result = Result(None)
             warnings.warn("Result was not set properly in the initial task and we therefore fallback on the default Result()")
         self.result = result    # Store final result...
 
