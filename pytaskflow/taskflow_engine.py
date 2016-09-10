@@ -3,6 +3,7 @@ import traceback
 import tempfile
 import os
 import warnings
+from pytaskflow.framework_factory import flask_actions
 
 
 STOP_TASK_REDIRECT_VALUE = 'home'
@@ -12,6 +13,7 @@ STOP_TASK_CONFIG = {
     'Proceed': False,
 }
 TEMP_DIR = tempfile.gettempdir()
+SUPPORTED_FRAMEWORKS = ('flask', )
 
 
 class LoggingHandler:
@@ -137,12 +139,11 @@ class Result:
         self.err_msg = err_msg
         if self.result_obj is None:
             self.result_obj = {
-                'DecisionResult': False,    # Default is ERROR
                 'FunctionResult': False,    # Default is ERROR
                 'FunctionTemplate': '',     # Default
                 'RenderTemplate': False,    # Render the default template
                 'Redirect': True,           # Must we redirect?
-                'RedirectUrl': 'error',     # If we need to redirect, whereto?
+                'RedirectUrl': '/',         # If we need to redirect, whereto?
             }
 
     def _get_string(self):
@@ -434,5 +435,37 @@ class FinalResult:
         raise Exception("You must override this method and return something your web framework will know how to interpret.")
 
 
+class WebFrameworkResult:
+    def __init__(self, framework='flask'):
+        if framework not in SUPPORTED_FRAMEWORKS:
+            raise Exception("Framework not supported")
+        self.framework = framework
+
+    def process_result(self, result=Result(None), entry_point=EntryPoint()):
+        result_obj = self._get_result_obj(result)
+        if self.framework == 'flask':
+            if 'WebFramework' in entry_point.other_instructions:
+                if entry_point.other_instructions['WebFramework'] == 'flask':
+                    if result_obj['Action'] == 'Redirect':
+                        return flask_actions(action='Redirect', context=None, template_name=None, redirect_url=result_obj['RedirectURL'], cookies=entry_point.cookies)
+                    else:
+                        return flask_actions(action='RenderTemplate', context=result_obj, template_name=result_obj['TemplateName'], redirect_url=None, cookies=entry_point.cookies)
+        raise Exception("Cannot process web framework result")
+
+    def _get_result_obj(self, result):
+        result_obj = {
+            'Action': 'Redirect',
+            'RedirectURL': '/',
+        }
+        if isinstance(result, Result):
+            result_obj = result.result_obj
+            if 'Action' in result_obj:
+                if result_obj['Action'] == 'Redirect':
+                    if not 'RedirectURL' in result_obj:
+                        result_obj['RedirectURL'] = '/'
+            if 'TemplateName' in result_obj:
+                if not isinstance(result_obj['TemplateName'], str):
+                    result_obj['TemplateName'] = 'index.html'
+        return result_obj
 
 # EOF
