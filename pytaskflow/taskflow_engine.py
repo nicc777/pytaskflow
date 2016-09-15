@@ -492,8 +492,8 @@ def run_workflow(path_to_task_collection=PathToTaskCollection(), entry_point=Ent
                 result_obj = result.result_obj
                 if 'Action' in result_obj:
                     if result_obj['Action'] == 'Redirect':
-                        if 'RedirectURL' in result_obj:
-                            redirect_url = result_obj['RedirectURL']
+                        if 'RedirectURL' not in result_obj:
+                            result_obj['RedirectURL'] = '/'
                 else:
                     result_obj = {
                         'Action': 'Redirect',
