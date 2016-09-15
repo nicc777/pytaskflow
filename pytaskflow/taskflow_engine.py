@@ -16,6 +16,14 @@ TEMP_DIR = tempfile.gettempdir()
 SUPPORTED_FRAMEWORKS = ('flask', )
 
 
+class PathToTaskCollection:
+    def __init__(self):
+        self.path_to_task_collection = {}
+
+    def register_path_processor(self, path, first_task_name, task_collection):
+        if path not in self.path_to_task_collection:
+            self.path_to_task_collection[path] = (first_task_name, task_collection)
+
 class LoggingHandler:
     """
     Default log class. You can safely override this class with your own implementation.
@@ -467,5 +475,47 @@ class WebFrameworkResult:
                 if not isinstance(result_obj['TemplateName'], str):
                     result_obj['TemplateName'] = 'index.html'
         return result_obj
+
+
+def workflow_from_path(path_to_task_collection=PathToTaskCollection(), entry_point=EntryPoint(), framework_processor=WebFrameworkResult(framework='flask')):
+        result_obj = {}
+        result = Result(None)
+        first_task_name = 'NotSupplied'
+        task_collection = None
+        if isinstance(entry_point, EntryPoint):
+            if entry_point.request_path in path_to_task_collection.path_to_task_collection:
+                task_collection = path_to_task_collection.path_to_task_collection[entry_point.request_path][1]
+                first_task_name = path_to_task_collection.path_to_task_collection[entry_point.request_path][0]
+            app_workflow = WorkFlow(first_task_name, task_collection, entry_point=entry_point)
+            result = app_workflow.result
+            if isinstance(result, Result):
+                result_obj = result.result_obj
+                if 'Action' in result_obj:
+                    if result_obj['Action'] == 'Redirect':
+                        if 'RedirectURL' in result_obj:
+                            redirect_url = result_obj['RedirectURL']
+                else:
+                    result_obj = {
+                        'Action': 'Redirect',
+                        'RedirectURL': '/',
+                    }
+                if 'TemplateName' in result_obj:
+                    result_obj['Action'] = 'ServeTemplate'
+                    if not isinstance(result_obj['TemplateName'], str):
+                        result_obj['TemplateName'] = 'index.html'
+            else:
+                warnings.warn("result was expected to be Result() but is %s" % type(result))
+                result_obj = {
+                    'Action': 'Redirect',
+                    'RedirectURL': '/',
+                }
+        else:
+            result_obj = {
+                'Action': 'Redirect',
+                'RedirectURL': '/',
+            }
+            entry_point = EntryPoint()
+        result.result_obj = result_obj
+        return framework_processor.process_result(result=result, entry_point=entry_point)
 
 # EOF
