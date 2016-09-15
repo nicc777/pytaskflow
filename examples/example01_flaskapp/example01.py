@@ -1,6 +1,6 @@
 from flask import Flask
 from flask import request
-from pytaskflow.taskflow_engine import EntryPoint, LoggingHandler, PathToTaskCollection, workflow_from_path
+from pytaskflow.taskflow_engine import EntryPoint, LoggingHandler, PathToTaskCollection, run_workflow
 import warnings
 import inspect
 from examples.example01.task_collection_factory import get_default_task_collection
@@ -41,6 +41,6 @@ def entry_point_creator(other_objs={}, other_instructions={}):
 @app.route('/')
 def home():
     # Run our WorkFlow
-    return workflow_from_path(path_to_task_collection=collection, entry_point=entry_point_creator())
+    return run_workflow(path_to_task_collection=collection, entry_point=entry_point_creator())
 
 # ./end of file

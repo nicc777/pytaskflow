@@ -477,7 +477,7 @@ class WebFrameworkResult:
         return result_obj
 
 
-def workflow_from_path(path_to_task_collection=PathToTaskCollection(), entry_point=EntryPoint(), framework_processor=WebFrameworkResult(framework='flask')):
+def run_workflow(path_to_task_collection=PathToTaskCollection(), entry_point=EntryPoint(), framework_processor=WebFrameworkResult(framework='flask')):
         result_obj = {}
         result = Result(None)
         first_task_name = 'NotSupplied'
