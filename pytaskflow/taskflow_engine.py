@@ -439,6 +439,78 @@ class FinalResult:
         raise Exception("You must override this method and return something your web framework will know how to interpret.")
 
 
+def get_function_param_names(the_function):
+    param_names = []
+    if callable(the_function):
+        for k in inspect.signature(the_function).parameters.items():
+            param_names.append(k[0])
+    return param_names
+
+
+def _dummy_function(*args):
+    pass
+
+
+class WebFramework:
+    """
+    Register of web framework specific functions.
+
+    The following functions must be supplied by the implementer:
+
+        * process_result(result=Result(None), entry_point=EntryPoint()) -> This function processes the final Result
+                returned from the WorkFlow and should produce either normal text, or a function to render a template or
+                a function to redirect - based on the web framework.
+
+        * endpoint_creator(request_obj, other_objs={}, other_instructions={}) -> This function takes the request object
+                from the web framework, together with some optional other objects and settings in a dictionary, and
+                build the EntryPoint (it must return and entry point).
+    """
+    def __init__(self, framework_name, log_impl=LoggingHandler()):
+        """
+        Initialize the class
+        :param framework_name: str with the framework name - may be useful for implementation
+        """
+        self.log_impl = log_impl
+        self.framework_name = framework_name
+        self.framework_functions = {}
+        self.register_framework_function(_dummy_function)
+
+    def register_framework_function(self, function_impl=None):
+        """
+        Registers a function.
+        :param function_impl: function (callable() must return True)
+        :return: boolean True if the function was successfully registered
+        """
+        added = False
+        if callable(function_impl):
+            self.log_impl.log(level='debug', message='registering function named {:s}'.format(function_impl.__name__))
+            if function_impl.__name__ == 'process_result':
+                param_names = get_function_param_names(function_impl)
+                if 'result' in param_names and 'entry_point' in param_names:
+                    self.framework_functions['process_result'] = function_impl
+                    added = True
+                else:
+                    warnings.warn('Could not add function named {:s}'.format(function_impl.__name__))
+            elif function_impl.__name__ == 'endpoint_creator':
+                param_names = get_function_param_names(function_impl)
+                if 'request_obj' in param_names and 'other_objs' in param_names and 'other_instructions' in param_names:
+                    self.framework_functions['endpoint_creator'] = function_impl
+                    added = True
+                else:
+                    warnings.warn('Could not add function named {:s}'.format(function_impl.__name__))
+            else:
+                self.framework_functions[function_impl.__name__] = function_impl
+                added = True
+        else:
+            warnings.warn('Implementation argument not a function!')
+        return added
+
+    def get_function(self, function_name):
+        if function_name in self.framework_functions:
+            return self.framework_functions[function_name]
+        return self.framework_functions['_dummy_function']
+
+
 class WebFrameworkResult:
     def __init__(self, framework='flask'):
         if framework not in SUPPORTED_FRAMEWORKS:
@@ -514,81 +586,6 @@ def run_workflow(path_to_task_collection=PathToTaskCollection(), entry_point=Ent
         result.result_obj = result_obj
         return framework_processor.process_result(result=result, entry_point=entry_point)
 
-
-class WebFrameworkActionsFactory:
-    def __init__(self, framework='flask'):
-        self.framework = framework
-        self.FRAMEWORK_ERR = 0
-        try:
-            from flask import render_template, make_response, redirect
-        except:
-            self.FRAMEWORK_ERR = 1
-        self.FRAMEWORKS = {
-            'flask': self._flask_actions
-        }
-
-    def get_action_for_framework(self, framework='flask'):
-        if framework in self.FRAMEWORKS:
-            return self.FRAMEWORKS['framework']
-
-    def _flask_actions(self, action='RenderTemplate', context=None, template_name='index.html', redirect_url='/', cookies=None, response_objects={}):
-        # For flask, response_obj must contain make_response, render_template and redirect ...
-        if self.FRAMEWORK_ERR > 0:
-            raise Exception("Flask could not be loaded...")
-        if not isinstance(cookies, dict):
-            cookies = None
-        if action == 'RenderTemplate':
-            if context is not None:
-                response = response_objects['make_response'](response_objects['render_template'](template_name, context=context))
-            else:
-                response = response_objects['make_response'](response_objects['render_template'](template_name))
-        else:
-            response = response_objects['make_response'](response_objects['redirect'](redirect_url))
-        if cookies is not None:
-            for key, value in cookies.items():
-                response.set_cookie(key, value)
-        return response
-
-
-class WebFrameworkEndpointFactory:
-    def __init__(self, framework='flask'):
-        self.framework = framework
-        self.FRAMEWORK_ERR = 0
-        try:
-            from flask import render_template, make_response, redirect
-        except:
-            self.FRAMEWORK_ERR = 1
-
-    def endpoint_creator(self, request_obj, other_objs={}, other_instructions={}):
-        if self.FRAMEWORK_ERR == 0:
-            return self._flask_endpoint_creator(request_obj=request_obj, other_objs=other_objs, other_instructions=other_instructions)
-        raise Exception("Framework '{s}' not yet supported".format(self.framework))
-
-    def _flask_endpoint_creator(self, request_obj, other_objs={}, other_instructions={}):
-        try:
-            _flask = __import__('flask', globals(), locals(), ['request'], 0)
-            if not (inspect.ismodule(_flask) and _flask.__name__ == 'flask'):
-                warnings.warn(
-                    "It doesn't appear that flask is installed, so this function will not be able to construct an EntryPoint")
-            else:
-                other_instructions['WebFramework'] = 'flask'
-                entry_point = EntryPoint(
-                    request_path=request_obj.path,
-                    request_method=request_obj.method,
-                    query_string=request_obj.args,
-                    post_data=request_obj.form,
-                    cookies=request_obj.cookies,
-                    default_template='index.html',
-                    log_handler=LoggingHandler(),
-                    framework_request_obj=request_obj,
-                    framework_response_obj=None,
-                    additional_framework_objects=other_objs,
-                    other_instructions=other_instructions,
-                )
-                return entry_point
-        except:
-            warnings.warn("It appears flask is not installed. Your app will now probably break...")
-        return EntryPoint()
 
 
 # EOF
