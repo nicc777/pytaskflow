@@ -118,10 +118,10 @@ class FileBasedSessionPersistence(SessionPersistence):
 
 class Function:
     def __init__(self):
-        self.result = Result()
+        self.result = Result(result_obj={})
 
-    def execute(self, input_result=Result()):
-        self.result = Result()
+    def execute(self, input_result=Result(result_obj={})):
+        self.result = Result(result_obj={})
         raise Exception("This must be overriden by your implementation")
 
 
@@ -154,7 +154,7 @@ class Task:
             else:
                 raise Exception("err_task must be of type Task")
 
-    def run_task(self, input_result=Result()):
+    def run_task(self, input_result=Result(result_obj={})):
         self.function.execute(input_result=input_result)
         if not isinstance(self.function.result, Result):
             raise Exception("function result was not of type Result!")
