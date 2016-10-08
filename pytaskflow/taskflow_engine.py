@@ -20,6 +20,7 @@ class PathToTaskCollection:
         if path not in self.path_to_task_collection:
             self.path_to_task_collection[path] = (first_task_name, task_collection)
 
+
 class LoggingHandler:
     """
     Default log class. You can safely override this class with your own implementation.
