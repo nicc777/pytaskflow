@@ -38,16 +38,31 @@ class FunkyLooperFunction(Function):
         """
         Required in the input_result is the following keys in the result_obj:
             'Numbers': [num1, num2, ..., numX]
-        The function will add all numbers and set a 'Total'
+        If 3 or more elements are in the list:
+            Add num1 and num2 and set as total. Create a NEW list with num1=total and then add the remainder of the list from num3 to numX
+        else:
+            Add num1 and num2 and set the 'Total' and set the stop indicator to True
         :param input_result: Result
         :return: Result with a new value of 'Total' set.
         """
         ro = input_result.result_obj
-        total = 0
+        res = Result(result_obj={'Total': 0}, stop=True)    # Set a save stop
         if 'Numbers' in ro:
-            for num in ro['Numbers']:
-                total += num
-        self.result = Result(result_obj={'Total': total}, is_error=False)
+            nums = ro['Numbers']
+            if isinstance(nums, list):
+                if len(nums) > 2:
+                    n1 = nums.pop(0)
+                    n2 = nums.pop(0)
+                    if isinstance(n1, int) and isinstance(n2, int):
+                        nums.append(n1+n2)
+                        res = Result(result_obj={'Numbers': nums}, stop=False)
+                else:
+                    total = 0
+                    for num in ro['Numbers']:
+                        if isinstance(num, int):
+                            total += num
+                    res = Result(result_obj={'Total': total}, stop=True)
+        self.result = res
 
 
 class FunctionTests(unittest.TestCase):
@@ -59,7 +74,8 @@ class FunctionTests(unittest.TestCase):
     def test_funky_looper_function_positive001(self):
         f = FunkyLooperFunction()
         f.execute(input_result=Result(result_obj={'Numbers': [1, 2, 3]}))
-        self.assertEqual(f.result.result_obj['Total'], 6)
+        self.assertEqual(len(f.result.result_obj['Numbers']), 2)
+        self.assertEqual(f.result.stop, False)
 
 
 class TaskTests(unittest.TestCase):
@@ -73,6 +89,13 @@ class TaskTests(unittest.TestCase):
         t1.run_task(input_result=Result(result_obj={}))
         self.assertEqual(t1.task_result.result_obj['Message'], 'Hello World')
         self.assertEqual(t1.task_result.result_obj['Variable'], 10)
+
+    def test_looping_task_positive001(self):
+        f = FunkyLooperFunction()
+        t1 = Task(task_name='Task 1')
+        t1.register_function(function=f, success_task=t1, err_task=None)
+        t1.run_task(input_result=Result(result_obj={'Numbers': [1, 2, 3]}))
+        self.assertEqual(t1.task_result.result_obj['Total'], 6)
 
 
 class WorkFlowTests(unittest.TestCase):

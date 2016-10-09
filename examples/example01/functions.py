@@ -13,7 +13,7 @@ class ErrorMessageFunction(Function):
                 print('ERROR: An error was set, but the error message was not provided')
         else:
             print('WARNING: The ErrorMessageFunction was called but the input_result contained no error information')
-        self.result = Result(result_obj={})
+        self.result = Result(result_obj={}, stop=True)
 
 
 # EOF
