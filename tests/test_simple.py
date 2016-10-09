@@ -30,11 +30,36 @@ class SetVariableFunction(Function):
         self.result = Result(result_obj=ro, is_error=False)
 
 
+class FunkyLooperFunction(Function):
+    def __init__(self):
+        super(FunkyLooperFunction, self).__init__()
+
+    def execute(self, input_result=Result(result_obj={})):
+        """
+        Required in the input_result is the following keys in the result_obj:
+            'Numbers': [num1, num2, ..., numX]
+        The function will add all numbers and set a 'Total'
+        :param input_result: Result
+        :return: Result with a new value of 'Total' set.
+        """
+        ro = input_result.result_obj
+        total = 0
+        if 'Numbers' in ro:
+            for num in ro['Numbers']:
+                total += num
+        self.result = Result(result_obj={'Total': total}, is_error=False)
+
+
 class FunctionTests(unittest.TestCase):
     def test_define_function_positive001(self):
         f = PrintFunction()
         f.execute()
         self.assertEqual(f.result.result_obj['Message'], 'Hello World')
+
+    def test_funky_looper_function_positive001(self):
+        f = FunkyLooperFunction()
+        f.execute(input_result=Result(result_obj={'Numbers': [1, 2, 3]}))
+        self.assertEqual(f.result.result_obj['Total'], 6)
 
 
 class TaskTests(unittest.TestCase):

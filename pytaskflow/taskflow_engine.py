@@ -117,16 +117,32 @@ class FileBasedSessionPersistence(SessionPersistence):
 
 
 class Function:
+    """
+    Base class for Function implementation. You need to override the execute() method and set self.result
+    """
     def __init__(self):
         self.result = Result(result_obj={})
 
     def execute(self, input_result=Result(result_obj={})):
+        """
+        Method you need to override.
+        :param input_result: Result containing input parameters
+        :return: nothing is returned by this method - you need to set self.result
+        """
         self.result = Result(result_obj={})
         raise Exception("This must be overriden by your implementation")
 
 
 class Task:
+    """
+    A Task contains a function to execute as well as the next Task to move to after the Function is successfully
+    executed. You can also set an error Task to execute should the function set the Result as an error.
+    """
     def __init__(self, task_name):
+        """
+        Initializes the task
+        :param task_name: str with the Task name
+        """
         self.task_name = task_name
         self.function = None
         self.success_task = None
@@ -134,6 +150,13 @@ class Task:
         self.task_result = None
 
     def register_function(self, function, success_task, err_task):
+        """
+        Registers a Function with the task together with the Task to execute on success or failure
+        :param function: Function implementation
+        :param success_task: Task to execute if the function does not set the Result as error
+        :param err_task: Task to execute if the function sets the Result as error
+        :return: nothing is returned. Instead, self.task_result is set.
+        """
         if function is not None:
             if isinstance(function, Function):
                 self.function = function
@@ -155,19 +178,30 @@ class Task:
                 raise Exception("err_task must be of type Task")
 
     def run_task(self, input_result=Result(result_obj={})):
+        """
+        Executes the Function and optionally run the Task set on success or failure of the Function
+        :param input_result: Result containing the input parameters
+        :return: nothing is returned, but rather self.task_result is set
+        """
         self.function.execute(input_result=input_result)
         if not isinstance(self.function.result, Result):
             raise Exception("function result was not of type Result!")
         if self.function.result.is_error:
             if self.err_task is not None:
                 self.err_task.run_task(input_result=self.function.result)
-                self.task_result = self.err_task.task_result
+                if not isinstance(self.err_task.task_result, Result):
+                    self.task_result = Result(result_obj={}, is_error=True, err_msg='Task {} produced an error by the error task {} did not set a valid Result'.format(self.task_name, self.err_task.task_name))
+                else:
+                    self.task_result = self.err_task.task_result
             else:
                 self.task_result = self.function.result
         if self.task_result is None:
             if self.success_task is not None:
                 self.success_task.run_task(input_result=self.function.result)
-                self.task_result = self.success_task.task_result
+                if isinstance(self.success_task.task_result, Result):
+                    self.task_result = self.success_task.task_result
+                else:
+                    self.task_result = self.function.result
             else:
                 self.task_result = self.function.result
         if self.task_result is None:
@@ -175,14 +209,27 @@ class Task:
 
 
 class WorkFlow:
+    """
+    A WorkFlow simply defines a Task to start work
+    """
     def __init__(self, workflow_name, starter_task):
+        """
+        Initialize the WorkFlow
+        :param workflow_name: str with the WorkFlow name
+        :param starter_task: Task to start the WorkFlow
+        """
         self.workflow_name = workflow_name
         if isinstance(starter_task, Task):
             self.starter_task = starter_task
         else:
             raise Exception("starter_task must be of type Task")
 
-    def run_workflow(self, input_result):
+    def run_workflow(self, input_result=Result(result_obj={})):
+        """
+        Start the WorkFlow by running the starter Task
+        :param input_result: Result continaing the input parameters
+        :return: Result with the final result of the last executed Task
+        """
         self.starter_task.run_task(input_result=input_result)
         return self.starter_task.task_result
 
