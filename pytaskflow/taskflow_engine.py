@@ -127,10 +127,11 @@ class Function:
     def __init__(self):
         self.result = Result(result_obj={})
 
-    def execute(self, input_result=Result(result_obj={})):
+    def execute(self, input_result=Result(result_obj={}), globals_dict={}):
         """
         Method you need to override.
         :param input_result: Result containing input parameters
+        :param globals_dict: dict containing named global variables/classes/methods
         :return: nothing is returned by this method - you need to set self.result
         """
         self.result = Result(result_obj={})
@@ -153,7 +154,7 @@ class Task:
         self.err_task = None
         self.task_result = None
 
-    def register_function(self, function, success_task, err_task):
+    def register_function(self, function, success_task, err_task, globals_dict={}):
         """
         Registers a Function with the task together with the Task to execute on success or failure
         :param function: Function implementation
@@ -181,13 +182,15 @@ class Task:
             else:
                 raise Exception("err_task must be of type Task")
 
+        self.globals_dict = globals_dict
+
     def run_task(self, input_result=Result(result_obj={})):
         """
         Executes the Function and optionally run the Task set on success or failure of the Function
         :param input_result: Result containing the input parameters
         :return: nothing is returned, but rather self.task_result is set
         """
-        self.function.execute(input_result=input_result)
+        self.function.execute(input_result=input_result, globals_dict=self.globals_dict)
         if not isinstance(self.function.result, Result):
             raise Exception("function result was not of type Result!")
         if self.function.result.is_error:

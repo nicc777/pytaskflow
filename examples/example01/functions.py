@@ -6,7 +6,7 @@ class ErrorMessageFunction(Function):
     def __init__(self):
         super(ErrorMessageFunction, self).__init__()
 
-    def execute(self, input_result=Result(result_obj={})):
+    def execute(self, input_result=Result(result_obj={}), globals_dict={}):
         if input_result.is_error:
             if input_result.err_msg is not None:
                 print('ERROR: {}'.format(input_result.err_msg))
@@ -21,49 +21,44 @@ class GenerateRandomNumberAndAddToList(Function):
     def __init__(self):
         super(GenerateRandomNumberAndAddToList, self).__init__()
 
-    def execute(self, input_result=Result(result_obj={})):
+    def execute(self, input_result=Result(result_obj={}), globals_dict={}):
         """
         Optional input parameters (result_obj dict):
             'Numbers': list of integers
-            'SuccessTask': Task with the success task to override (after 10 numbers) are in the list
         :param input_result: Result with the input parameters
+        :param globals_dict: dict
         :return: nothing - sets self.result
         """
         numbers = []
-        stop = False
         success_task = None
         if 'Numbers' in input_result.result_obj:
             numbers = input_result.result_obj['Numbers']
         if len(numbers) < 10:
             numbers.append(random.randrange(100))
-        if len(numbers) >= 10:
-            stop = True
-        if 'SuccessTask' in input_result.result_obj:
-            if isinstance(input_result.result_obj['SuccessTask'], Task):
-                success_task = input_result.result_obj['SuccessTask']
-            del input_result.result_obj['SuccessTask']
-        self.result = Result(result_obj={'Numbers': numbers, 'SuccessTask': success_task}, stop=stop, override_success_task=success_task)
+            if 'GenerateRandomNumberAndAddToListTask' in globals_dict:
+                success_task = globals_dict['GenerateRandomNumberAndAddToListTask']
+        self.result = Result(result_obj={'Numbers': numbers}, override_success_task=success_task)
 
 
 class CalcSumOfListOfNumbers(Function):
     def __init__(self):
         super(CalcSumOfListOfNumbers, self).__init__()
 
-    def execute(self, input_result=Result(result_obj={})):
+    def execute(self, input_result=Result(result_obj={}), globals_dict={}):
         total = 0
         if 'Numbers' in input_result.result_obj:
             nums = input_result.result_obj['Numbers']
             for num in nums:
                 if isinstance(num, int):
                     total += num
-        self.result = Result(result_obj={'Total': total})
+        self.result = Result(result_obj={'Total': total, 'Stop': True})
 
 
 class DumpResultObj(Function):
     def __init__(self):
         super(DumpResultObj, self).__init__()
 
-    def execute(self, input_result=Result(result_obj={})):
+    def execute(self, input_result=Result(result_obj={}), globals_dict={}):
         if isinstance(input_result.result_obj, dict):
             for k,v in input_result.result_obj.items():
                 print('DUMP: {}={}'.format(k, v))
