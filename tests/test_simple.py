@@ -65,6 +65,36 @@ class FunkyLooperFunction(Function):
         self.result = res
 
 
+class DumpResultObj(Function):
+    def __init__(self):
+        super(DumpResultObj, self).__init__()
+
+    def execute(self, input_result=Result(result_obj={})):
+        if isinstance(input_result.result_obj, dict):
+            for k,v in input_result.result_obj.items():
+                print('DUMP: {}={}'.format(k, v))
+        print('--- DUMP DONE ---')
+        stop = False
+        if 'Stop' in input_result.result_obj:
+            if isinstance(input_result.result_obj['Stop'], bool):
+                stop = input_result.result_obj['Stop']
+                del input_result.result_obj['Stop']
+        res = input_result.result_obj
+        res['Dumped'] = True
+        self.result = Result(result_obj=res, stop=stop)
+
+
+class TaskOverridingSuccessTask(Function):
+    def __init__(self):
+        super(TaskOverridingSuccessTask, self).__init__()
+
+    def execute(self, input_result=Result(result_obj={})):
+        f = DumpResultObj()
+        t = Task(task_name='Dumper Task')
+        t.register_function(function=f, success_task=None, err_task=None)
+        self.result = Result(result_obj={'Stop': True, 'Message': 'Dumping stuff and stopping the bus'}, override_success_task=t)
+
+
 class FunctionTests(unittest.TestCase):
     def test_define_function_positive001(self):
         f = PrintFunction()
@@ -96,6 +126,14 @@ class TaskTests(unittest.TestCase):
         t1.register_function(function=f, success_task=t1, err_task=None)
         t1.run_task(input_result=Result(result_obj={'Numbers': [1, 2, 3]}))
         self.assertEqual(t1.task_result.result_obj['Total'], 6)
+
+    def test_task_overriding_positive001(self):
+        f = TaskOverridingSuccessTask()
+        t = Task(task_name='Task 1')
+        t.register_function(function=f, success_task=None, err_task=None)
+        t.run_task(input_result=Result(result_obj={}))
+        self.assertEqual(t.task_result.result_obj['Message'], 'Dumping stuff and stopping the bus')
+        self.assertTrue(t.task_result.result_obj['Dumped'])
 
 
 class WorkFlowTests(unittest.TestCase):
