@@ -32,13 +32,7 @@ class Result:
         self.is_error = is_error
         self.err_msg = err_msg
         if self.result_obj is None:
-            self.result_obj = {
-                'FunctionResult': False,    # Default is ERROR
-                'FunctionTemplate': '',     # Default
-                'RenderTemplate': False,    # Render the default template
-                'Redirect': True,           # Must we redirect?
-                'RedirectUrl': '/',         # If we need to redirect, whereto?
-            }
+            self.result_obj = {}
         self.stop = stop
         self.override_success_task = override_success_task
         self.override_err_task = override_err_task
